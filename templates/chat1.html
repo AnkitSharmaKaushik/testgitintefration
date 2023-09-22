@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div id="chat-container">
+    <div id="chat-box">
+      {% for message in chat_history %}
+        <div class="chat-message {% if message.role == 'user' %}user-message{% endif %}{% if message.role == 'bot' %}bot-message{% endif %}">
+          {{ message.role }}: <span class="message-content">{{ message.content }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    <div id="user-input">
+      <input type="text" id="input-text" placeholder="Type your message..." />
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <style>
+    .bot-message .message-content {
+      white-space: pre-line;
+    }
+  </style>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#send-btn').click(function() {
+        sendMessage();
+      });
+
+      $('#input-text').keypress(function(event) {
+        if (event.which === 13) { // Enter key
+          sendMessage();
+          event.preventDefault();
+        }
+      });
+
+      function sendMessage() {
+        var userMessage = $('#input-text').val().trim();
+        if (userMessage !== '') {
+          appendMessage("User", userMessage, 'user-message');
+          $('#input-text').val('');
+
+          // Make an AJAX request to your FastAPI backend
+          $.get('/get_response/', { user_input: userMessage }, function(data) {
+            var botResponse = data.response;
+            appendMessage("Bot", botResponse, 'bot-message');
+            scrollToBottom();
+          });
+        }
+      }
+
+      function appendMessage(role, message, className) {
+        $('#chat-box').append('<div class="chat-message ' + className + '">' + role + ': <span class="message-content">' + message + '</span></div>');
+      }
+
+      function scrollToBottom() {
+        $('#chat-container').scrollTop($('#chat-container')[0].scrollHeight);
+      }
+    });
+  </script>
+{% endblock %}
